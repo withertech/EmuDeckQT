@@ -1,0 +1,22 @@
+[tool.briefcase]
+project_name = "EmuDeckQT"
+bundle = "com.withertech"
+version = "0.0.1"
+url = "https://github.com/withertech/EmuDeckQT"
+license = "GNU General Public License v3 or later (GPLv3+)"
+author = 'Witherking25'
+author_email = "witherking@withertech.com"
+
+[tool.briefcase.app.emudeckqt]
+formal_name = "EmuDeckQT"
+description = "QT port for EmuDeck"
+icon = "src/emudeckqt/resources/emudeckqt"
+sources = ['src/emudeckqt']
+requires = [
+    "PyQt5==5.15.6",
+    "qtutils==3.0.0"
+]
+
+[tool.briefcase.app.emudeckqt.linux]
+requires = []
+system_requires = []

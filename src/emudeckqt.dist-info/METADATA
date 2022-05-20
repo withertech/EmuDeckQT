@@ -1,0 +1,10 @@
+Metadata-Version: 2.1
+Briefcase-Version: 0.3.6
+Name: emudeckqt
+Formal-Name: EmuDeckQT
+App-ID: com.withertech.emudeckqt
+Version: 0.0.1
+Home-page: https://github.com/withertech/EmuDeckQT
+Author: Witherking25
+Author-email: witherking@withertech.com
+Summary: QT port for EmuDeck
