@@ -31,5 +31,5 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: hellopyqt-${{ runner.os }}.AppImage
+          name: EmuDeckQT.AppImage
           path: '**/*.AppImage'
