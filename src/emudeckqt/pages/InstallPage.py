@@ -110,12 +110,12 @@ class InstallPage(QWizardPage):
         count: int = 0
 
         # Downloading files
-        count += 1
+        # count += 1
 
         # Installing AppImages
         if main.CONF.InstallESDE:
             count += 1
-        if main.CONF.destination == Destination.SD:
+        if main.CONF.destination != "$HOME":
             count += 1
         if main.CONF.InstallESDE:
             count += 1
@@ -188,12 +188,18 @@ class InstallPage(QWizardPage):
                     F"chmod +x \"{main.CONF.toolsPath}EmulationStation-DE-x64_SteamDeck.AppImage\"")
                 self.next_signal.emit()
 
-            if main.CONF.destination == Destination.SD:
+            if main.CONF.destination != "$HOME":
                 if not os.path.exists(main.CONF.ESDEscrapData):
-                    self.status_signal.emit("<b>Moving EmulationStation downloaded media to the SD Card</b>")
-                    subprocess.getstatusoutput(F"mv ~/.emulationstation/downloaded_media {main.CONF.ESDEscrapData} && "
-                                               F"rm -rf ~/.emulationstation/downloaded_media && "
-                                               F"ln -sn {main.CONF.ESDEscrapData} ~/.emulationstation/downloaded_media")
+                    if "SD" in main.CONF.destinations.keys() and main.CONF.destination == main.CONF.destinations.get(
+                            "SD"):
+                        self.status_signal.emit("<b>Moving EmulationStation downloaded media to the SD Card</b>")
+                    else:
+                        self.status_signal.emit(
+                            F"<b>Moving EmulationStation downloaded media to {main.CONF.destination}</b>")
+                    subprocess.getstatusoutput(F"mv ~/.emulationstation/downloaded_media {main.CONF.ESDEscrapData}")
+                    subprocess.getstatusoutput(F"rm -rf ~/.emulationstation/downloaded_media")
+                    subprocess.getstatusoutput(F"mkdir -p {main.CONF.ESDEscrapData}")
+                    subprocess.getstatusoutput(F"ln -s {main.CONF.ESDEscrapData} ~/.emulationstation/downloaded_media")
                     self.next_signal.emit()
 
             if main.CONF.InstallSRM:
@@ -321,15 +327,20 @@ class InstallPage(QWizardPage):
                 subprocess.getstatusoutput(F"chmod +x \"{main.CONF.toolsPath}\"launchers/xemu.sh")
                 self.next_signal.emit()
 
-            if main.CONF.destination == Destination.SD:
+            if "SD" in main.CONF.destinations.keys() and main.CONF.destination == main.CONF.destinations.get("SD"):
                 self.status_signal.emit("<b>Creating roms folder in your SD Card...</b>")
-            else:
+            elif "Internal" in main.CONF.destinations.keys() and main.CONF.destination == main.CONF.destinations.get(
+                    "Internal"):
                 self.status_signal.emit("<b>Creating roms folder in your home folder...</b>")
+            else:
+                self.status_signal.emit(F"<b>Creating roms folder in {main.CONF.destination}...</b>")
+
             subprocess.getstatusoutput(F"mkdir -p \"{main.CONF.romsPath}\"")
             subprocess.getstatusoutput(F"mkdir -p \"{main.CONF.biosPath}\"")
             subprocess.getstatusoutput(F"mkdir -p \"{main.CONF.biosPath}/yuzu/\"")
-            subprocess.getstatusoutput(F"rsync -r ~/dragoonDoriseTools/EmuDeck/roms/ \"{main.CONF.romsPath}\" &>> "
-                                       F"~/emudeck/emudeck.log")
+            subprocess.getstatusoutput(F"rsync -r {main.getResourcesDir()}/roms/ \"{main.CONF.romsPath}\" "
+                                       F"&>> ~/emudeck/emudeck.log")
+
             if main.CONF.emus["Cemu"]:
                 self.status_signal.emit("<b>Installing Cemu</b>")
                 subprocess.getstatusoutput("flatpak remote-add --user --if-not-exists withertech "
@@ -357,12 +368,22 @@ class InstallPage(QWizardPage):
         def run(self):
             self.start_signal.emit()
 
-            self.download_files()
+            # self.download_files()
 
             self.install_appimages()
-            self.password_signal.emit()
-            while self.password == "":
-                self.sleep(1)
+            if re.search("Jupiter", subprocess.getoutput("cat /sys/devices/virtual/dmi/id/product_name")) is None:
+                self.password_signal.emit()
+                while self.password == "":
+                    self.sleep(1)
+                for package in ("packagekit-qt5", "flatpak", "rsync", "unzip"):
+                    subprocess.getstatusoutput(F"pacman -Q {package} &>> ~/emudeck/emudeck.log || sudo pacman -Sy "
+                                               F"--noconfirm ${package} &>> ~/emudeck/emudeck.log")
+                if re.search(getpass.getuser(), subprocess.getoutput("awk '/'${USER}'/ {if ($1 ~ /wheel/) print}' "
+                                                                     "/etc/group")) is None:
+                    subprocess.getstatusoutput("sudo usermod -a -G wheel ${USER} &>> ~/emudeck/emudeck.log")
+                    subprocess.getstatusoutput("newgrp wheel")
+                if re.search("root", subprocess.getoutput("stat -c %U ${HOME}/Desktop")):
+                    subprocess.getstatusoutput("sudo chown -R ${USER}:${USER} ~/Desktop &>> ~/emudeck/emudeck.log")
             self.install_flatpaks()
 
             self.finish_signal.emit()

@@ -14,7 +14,8 @@ icon = "src/emudeckqt/resources/emudeckqt"
 sources = ['src/emudeckqt']
 requires = [
     "PyQt5==5.15.6",
-    "qtutils==3.0.0"
+    "qtutils==3.0.0",
+    "pexpect==4.8.0"
 ]
 
 [tool.briefcase.app.emudeckqt.linux]

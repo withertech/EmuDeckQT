@@ -4,7 +4,7 @@ from emudeckqt.Destination import Destination
 class Conf:
     branch: str = "main"
     expert: bool = False
-    destination: Destination = Destination.SD
+    destination: str = "$HOME"
     emulationPath: str = "$HOME/Emulation/"
     romsPath: str = "$HOME/Emulation/roms/"
     toolsPath: str = "$HOME/Emulation/tools/"
@@ -54,4 +54,7 @@ class Conf:
         "Cemu": True,
         "Xemu": True,
         "SRM": True
+    }
+    destinations: dict = {
+        "Internal": "$HOME"
     }

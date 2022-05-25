@@ -7,11 +7,16 @@ from PyQt5 import QtWidgets
 
 from emudeckqt import EmuDeckWizard
 from emudeckqt.Conf import Conf
+from pathlib import Path
 
 CONF: Conf = Conf()
 
 app: QtWidgets.QApplication
 exitcode: int = 0
+
+
+def getResourcesDir():
+    Path(__file__).joinpath("resources")
 
 
 def main():

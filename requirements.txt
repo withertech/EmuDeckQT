@@ -6,3 +6,4 @@ setuptools==62.2.0
 wheel==0.37.1
 qtutils==3.0.0
 briefcase==0.3.6
+pexpect==4.8.0

@@ -4,12 +4,12 @@ from PyQt5.QtWidgets import QWizard, QMessageBox
 
 
 class EmuDeckWizard(QWizard):
-    NUM_PAGES = 19
+    NUM_PAGES = 17
 
     (
         PageIntro, PageDestination, PageCHDTool, PagePowertools, PageSRM, PageESDE, PageEmuSelect, PageRACustom,
         PageRABezels, PageRAAutoSave, PageSNESAR, PageWidescreenSelect, PageOverwriteSelect, PageInstall,
-        PagePasswordIncorrect, PageSDNotWritableError, PageSDIncompatibleFSError, PageSDNonexistentError,
+        PagePasswordIncorrect, PageDestinationNotFoundError,
         PageConclusion
     ) = range(NUM_PAGES)
 
@@ -38,9 +38,7 @@ class EmuDeckWizard(QWizard):
         # self.setPage(self.PageDetails, DetailsPage())
 
         self.setPage(self.PagePasswordIncorrect, ErrorPage.PasswordIncorrectErrorPage())
-        self.setPage(self.PageSDNotWritableError, ErrorPage.SDNotWritableErrorPage())
-        self.setPage(self.PageSDIncompatibleFSError, ErrorPage.SDIncompatibleFSErrorPage())
-        self.setPage(self.PageSDNonexistentError, ErrorPage.SDNonexistentErrorPage())
+        self.setPage(self.PageDestinationNotFoundError, ErrorPage.DestinationNotFoundErrorPage())
         # self.setPage(self.PageConclusion, ConclusionPage())
 
         self.setStartId(self.PageIntro)
@@ -49,6 +47,7 @@ class EmuDeckWizard(QWizard):
         self.setWizardStyle(self.ModernStyle)
         self.setOption(self.HaveHelpButton, True)
         self.setPixmap(QWizard.LogoPixmap, QPixmap(":/images/logo.png"))
+        self.setButtonText(QWizard.CommitButton, "Install")
 
         # set up help messages
         self._lastHelpMsg = ''

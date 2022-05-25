@@ -2,23 +2,38 @@ import os.path
 import subprocess
 
 from PyQt5.QtGui import QPixmap
-from PyQt5.QtWidgets import QWizard, QLabel, QWizardPage, QComboBox, QVBoxLayout
+from PyQt5.QtWidgets import QWizard, QLabel, QWizardPage, QComboBox, QVBoxLayout, QFileDialog
 
-from emudeckqt.Destination import Destination
+
+def testLocationValid(name: str, path: str, simulate: bool = False) -> bool:
+    from emudeckqt import app as main
+    subprocess.getstatusoutput(F"touch {path}/testwrite")
+    if not os.path.exists(F"{path}/testwrite"):
+        ret = False
+    else:
+        subprocess.getstatusoutput(F"ln -s {path}/testwrite {path}/testwrite.link")
+        if not os.path.exists(F"{path}/testwrite.link"):
+            ret = False
+        else:
+            ret = True
+            if not simulate: main.CONF.destinations[name] = path
+    subprocess.getstatusoutput(F"rm -f \"{path}/testwrite\" \"{path}/testwrite.link\"")
+    return ret
 
 
 class DestinationPage(QWizardPage):
     def __init__(self, parent=None):
+        from emudeckqt import app as main
         super(DestinationPage, self).__init__(parent)
 
         self.setTitle(self.tr("Destination"))
         self.setPixmap(QWizard.WatermarkPixmap, QPixmap(":/images/watermark.png"))
-        topLabel = QLabel(self.tr("Do you want to install your roms on your SD Card or on your Internal Storage?"))
+        topLabel = QLabel(self.tr("Where would you like Emudeck to be installed?"))
         topLabel.setWordWrap(True)
 
         combo = QComboBox()
         self.combo = combo
-        combo.addItems(["SD", "Internal"])
+        combo.addItems(main.CONF.destinations.keys())
 
         layout = QVBoxLayout()
         layout.addWidget(topLabel)
@@ -28,53 +43,41 @@ class DestinationPage(QWizardPage):
     def initializePage(self) -> None:
         from emudeckqt import app as main
         self.setCommitPage(not main.CONF.expert)
+        if os.path.exists("/dev/mmcblk0p1"):
+            sdCardFull = subprocess.getoutput("findmnt -n --raw --evaluate --output=target -S /dev/mmcblk0p1")
+            testLocationValid("SD", sdCardFull)
+            self.combo.addItem("SD")
+        if main.CONF.expert:
+            main.CONF.destinations["Custom"] = "CUSTOM"
+            self.combo.addItem("Custom")
 
     def nextId(self):
         from emudeckqt import app as main
         from emudeckqt.EmuDeckWizard import EmuDeckWizard
 
-        def makeDirs():
-            subprocess.getstatusoutput(F"mkdir -p \"{main.CONF.emulationPath}\"")
-            subprocess.getstatusoutput(F"mkdir -p \"{main.CONF.toolsPath}\"launchers")
-            subprocess.getstatusoutput(F"mkdir -p \"{main.CONF.savesPath}\"")
-
-            subprocess.getstatusoutput(F"find \"{main.CONF.romsPath}\" -name \"readme.md\" -type f -delete &>> "
-                                       F"~/emudeck/emudeck.log")
-
-        def setOverridesAndReturn():
-            if main.CONF.expert:
-                return EmuDeckWizard.PageCHDTool
+        if main.CONF.destinations[self.combo.currentText()] == "CUSTOM":
+            main.CONF.destination = QFileDialog.getExistingDirectory(self, "Select a destination for the "
+                                                                                     "Emulation directory.")
+            if main.CONF.destination != "CUSTOM":
+                if not testLocationValid("Custom", main.CONF.destination, True):
+                    return EmuDeckWizard.PageDestinationNotFoundError
             else:
-                return EmuDeckWizard.PageInstall
+                return EmuDeckWizard.PageDestinationNotFoundError
+        else:
+            main.CONF.destination = main.CONF.destinations[self.combo.currentText()]
+        main.CONF.emulationPath = F"{main.CONF.destination}/Emulation/"
+        main.CONF.romsPath = F"{main.CONF.destination}/Emulation/roms/"
+        main.CONF.toolsPath = F"{main.CONF.destination}/Emulation/tools/"
+        main.CONF.biosPath = F"{main.CONF.destination}/Emulation/bios/"
+        main.CONF.savesPath = F"{main.CONF.destination}/Emulation/saves/"
+        main.CONF.ESDEscrapData = F"{main.CONF.destination}/Emulation/tools/downloaded_media"
 
-        match self.combo.currentText():
-            case "SD":
-                subprocess.getstatusoutput("echo \"Storage: SD\" &>> ~/emudeck/emudeck.log")
-                main.destination = Destination.SD
-                subprocess.getstatusoutput("echo \"\" > ~/emudeck/.SD")
-                if os.path.exists("/dev/mmcblk0p1"):
-                    sdCardFull = subprocess.getoutput("findmnt -n --raw --evaluate --output=target -S /dev/mmcblk0p1")
-                    subprocess.getstatusoutput(F"touch {sdCardFull}/testwrite")
-                    if not os.path.exists(F"{sdCardFull}/testwrite"):
-                        return EmuDeckWizard.PageSDNotWritableError
-                    subprocess.getstatusoutput(F"ln -s {sdCardFull}/testwrite {sdCardFull}/testwrite.link")
-                    if not os.path.exists(F"{sdCardFull}/testwrite.link"):
-                        return EmuDeckWizard.PageSDIncompatibleFSError
-                    os.remove(F"{sdCardFull}/testwrite.link")
-                    os.remove(F"{sdCardFull}/testwrite")
-                else:
-                    return EmuDeckWizard.PageSDNonexistentError
-                main.CONF.emulationPath = F"{sdCardFull}/Emulation/"
-                main.CONF.romsPath = F"{sdCardFull}/Emulation/roms/"
-                main.CONF.toolsPath = F"{sdCardFull}/Emulation/tools/"
-                main.CONF.biosPath = F"{sdCardFull}/Emulation/bios/"
-                main.CONF.savesPath = F"{sdCardFull}/Emulation/saves/"
-                main.CONF.ESDEscrapData = F"{sdCardFull}/Emulation/tools/downloaded_media"
-                makeDirs()
-                return setOverridesAndReturn()
-
-            case "Internal":
-                subprocess.getstatusoutput("echo \"Storage: INTERNAL\" &>> ~/emudeck/emudeck.log")
-                main.CONF.destination = Destination.INTERNAL
-                makeDirs()
-                return setOverridesAndReturn()
+        subprocess.getstatusoutput(F"mkdir -p \"{main.CONF.emulationPath}\"")
+        subprocess.getstatusoutput(F"mkdir -p \"{main.CONF.toolsPath}\"launchers")
+        subprocess.getstatusoutput(F"mkdir -p \"{main.CONF.savesPath}\"")
+        subprocess.getstatusoutput(F"find \"{main.CONF.romsPath}\" -name \"readme.md\" -type f -delete &>> "
+                                   F"~/emudeck/emudeck.log")
+        if main.CONF.expert:
+            return EmuDeckWizard.PageCHDTool
+        else:
+            return EmuDeckWizard.PageInstall

@@ -30,29 +30,11 @@ class PasswordIncorrectErrorPage(PasswordErrorPage):
         super(PasswordIncorrectErrorPage, self).__init__("<b>Password incorrect</b>", parent)
 
 
-class SDErrorPage(ErrorPage):
+class DestinationErrorPage(ErrorPage):
     def __init__(self, detail: str, parent=None):
-        super(SDErrorPage, self).__init__("SDCard Error", detail, parent)
+        super(DestinationErrorPage, self).__init__("Destination Error", detail, parent)
 
 
-class SDNotWritableErrorPage(SDErrorPage):
+class DestinationNotFoundErrorPage(DestinationErrorPage):
     def __init__(self, parent=None):
-        super(SDNotWritableErrorPage, self).__init__("<b>SD Card not writable</b>\nMake sure your SD Card is writable",
-                                                     parent)
-
-
-class SDIncompatibleFSErrorPage(SDErrorPage):
-    def __init__(self, parent=None):
-        super(SDIncompatibleFSErrorPage, self).__init__("<b>Your SD Card is not compatible with EmuDeck.</b>\nMake "
-                                                        "sure to use a supported filesystem like EXT4. Formatting "
-                                                        "your SD Card from SteamUI will fix this.\n\n Go back to "
-                                                        "Gaming Mode, Settings, System and select Format SD Card "
-                                                        "there. This will delete all your SD contents.",
-                                                        parent)
-
-
-class SDNonexistentErrorPage(SDErrorPage):
-    def __init__(self, parent=None):
-        super(SDNonexistentErrorPage, self).__init__("<b>SD Card not detected</b>\nMake sure your SD Card is inserted "
-                                                     "and start again the installation",
-                                                     parent)
+        super(DestinationNotFoundErrorPage, self).__init__("<b>No such file or directory</b>", parent)
